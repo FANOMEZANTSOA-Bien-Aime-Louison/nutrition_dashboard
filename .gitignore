@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / éditeurs
+.DS_Store
+*.swp
+.vscode/
+.idea/
+PROJECT_BRIEF.md
