@@ -198,8 +198,8 @@ print(pd.DataFrame({
 
     ("markdown", """## 6. Contrôle des bornes sur les autres colonnes
 
-Colonnes citées au brief (`age`, `bmi`, `daily_calories`) et les colonnes de mesure
-restantes. On cherche des valeurs impossibles, pas des valeurs rares.
+Colonnes de profil prioritaires (`age`, `bmi`, `daily_calories`) et les colonnes de
+mesure restantes. On cherche des valeurs impossibles, pas des valeurs rares.
 """),
 
     ("code", """ranges = df[["age", "height_cm", "weight_kg", "bmi", "daily_calories",

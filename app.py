@@ -207,9 +207,9 @@ def view_intake(df: pd.DataFrame, exclude_imputed: bool) -> None:
 
     specs = [
         ("daily_sodium_mg", "daily_sodium_mg_imputed", "Sodium (mg/j)",
-         SODIUM_TARGET_MG, f"cible ≈ {SODIUM_TARGET_MG} mg"),
+         SODIUM_TARGET_MG, f"repère pop. générale ≈ {SODIUM_TARGET_MG} mg"),
         ("protein_per_kg", "protein_per_kg_imputed", "Protéines (g/kg/j)",
-         PROTEIN_TARGET_G_PER_KG, f"référence {PROTEIN_TARGET_G_PER_KG} g/kg"),
+         PROTEIN_TARGET_G_PER_KG, f"repère pop. générale {PROTEIN_TARGET_G_PER_KG} g/kg"),
     ]
     for value_col, imputed_col, title, target, target_text in specs:
         data = df if not exclude_imputed else df[~df[imputed_col]]
@@ -269,7 +269,7 @@ def view_protein(df: pd.DataFrame, exclude_imputed: bool) -> None:
     fig = go.Figure(go.Histogram(x=data["protein_per_kg"], marker_color=PALETTE[0], nbinsx=40))
     fig.update_layout(title=f"protein_per_kg (n={len(data):,})".replace(",", " "),
                       xaxis_title="g de protéines / kg de poids", yaxis_title="patients")
-    target_line(fig, x=PROTEIN_TARGET_G_PER_KG, text=f"référence {PROTEIN_TARGET_G_PER_KG} g/kg")
+    target_line(fig, x=PROTEIN_TARGET_G_PER_KG, text=f"repère pop. générale {PROTEIN_TARGET_G_PER_KG} g/kg")
     st.plotly_chart(style_fig(fig), width="stretch")
 
     st.markdown("**Taux de patients sous 0,8 g/kg par tranche d'âge**")

@@ -9,6 +9,51 @@ de données et ne dépendent pas de ce dataset.
 
 ---
 
+## Sommaire
+
+- [Étape 1 — Analyse exploratoire (EDA)](#étape-1--analyse-exploratoire-eda)
+  - [1.1 — Produire le notebook via un script générateur (`_build_01_eda.py`)](#11--produire-le-notebook-via-un-script-générateur-_build_01_edapy)
+  - [1.2 — Distinguer « valeur manquante » et modalité « Aucune » sur `condition`](#12--distinguer--valeur-manquante--et-modalité--aucune--sur-condition)
+  - [1.3 — Vérifier la cohérence `bmi` fourni vs IMC recalculé avec un seuil explicite](#13--vérifier-la-cohérence-bmi-fourni-vs-imc-recalculé-avec-un-seuil-explicite)
+  - [1.4 — Repérer les valeurs aberrantes en EDA, mais ne pas les corriger](#14--repérer-les-valeurs-aberrantes-en-eda-mais-ne-pas-les-corriger)
+  - [1.5 — Inspecter la matrice de corrélation pour qualifier les variables d'évolution](#15--inspecter-la-matrice-de-corrélation-pour-qualifier-les-variables-dévolution)
+  - [1.6 — Séparation apprentissage / portfolio dès la première écriture](#16--séparation-apprentissage--portfolio-dès-la-première-écriture)
+- [Étape 2 — Nettoyage](#étape-2--nettoyage)
+  - [2.1 — Erreur de saisie vs valeur extrême réelle : deux traitements opposés](#21--erreur-de-saisie-vs-valeur-extrême-réelle--deux-traitements-opposés)
+  - [2.2 — `condition` manquante : modalité explicite plutôt que mode ou suppression](#22--condition-manquante--modalité-explicite-plutôt-que-mode-ou-suppression)
+  - [2.3 — Granularité de la médiane décidée par test statistique, pas par défaut](#23--granularité-de-la-médiane-décidée-par-test-statistique-pas-par-défaut)
+  - [2.4 — Colonnes indicatrices `*_imputed` et distribution brute vs imputée](#24--colonnes-indicatrices-_imputed-et-distribution-brute-vs-imputée)
+  - [2.5 — Aucune ligne supprimée, aucune valeur écrêtée sur les autres colonnes](#25--aucune-ligne-supprimée-aucune-valeur-écrêtée-sur-les-autres-colonnes)
+- [Étape 3 — Feature engineering](#étape-3--feature-engineering)
+  - [3.1 — `bmi_category` : seuils normatifs externes plutôt que découpage empirique](#31--bmi_category--seuils-normatifs-externes-plutôt-que-découpage-empirique)
+  - [3.2 — `protein_per_kg` : rapporter l'apport à la bonne unité métier](#32--protein_per_kg--rapporter-lapport-à-la-bonne-unité-métier)
+  - [3.3 — `risk_screen_score` : composite règle-à-règle, orienté triage, imputation-aware](#33--risk_screen_score--composite-règle-à-règle-orienté-triage-imputation-aware)
+  - [3.4 — Piste écartée : découpage de `follow_up_weeks` en tranches](#34--piste-écartée--découpage-de-follow_up_weeks-en-tranches)
+  - [3.5 — Piste écartée : ancienneté calendaire depuis l'admission](#35--piste-écartée--ancienneté-calendaire-depuis-ladmission)
+- [Étape 4 — Conception du dashboard](#étape-4--conception-du-dashboard)
+  - [4.1 — Principe transversal : pas de croisement numérique × numérique](#41--principe-transversal--pas-de-croisement-numérique--numérique)
+  - [4.2 — VIZ 1 : Vue d'ensemble de la patientèle](#42--viz-1--vue-densemble-de-la-patientèle)
+  - [4.3 — VIZ 2 : Triage — score de risque et drapeaux](#43--viz-2--triage--score-de-risque-et-drapeaux)
+  - [4.4 — VIZ 3 : Apports observés vs cible thérapeutique, par régime](#44--viz-3--apports-observés-vs-cible-thérapeutique-par-régime)
+  - [4.5 — VIZ 4 : Évolution du poids par type de régime](#45--viz-4--évolution-du-poids-par-type-de-régime)
+  - [4.6 — VIZ 5 : Adéquation protéique de la patientèle](#46--viz-5--adéquation-protéique-de-la-patientèle)
+  - [4.7 — VIZ 6 : Flux d'admissions dans le temps (version allégée)](#47--viz-6--flux-dadmissions-dans-le-temps-version-allégée)
+  - [4.8 — Filtres interactifs](#48--filtres-interactifs)
+- [Étape 5 — Construction du dashboard Streamlit](#étape-5--construction-du-dashboard-streamlit)
+  - [5.1 — Plotly comme bibliothèque de graphiques](#51--plotly-comme-bibliothèque-de-graphiques)
+  - [5.2 — Palette catégorielle fixe, validée pour le daltonisme](#52--palette-catégorielle-fixe-validée-pour-le-daltonisme)
+  - [5.3 — Onglets, jumeaux tabulaires, thème clair](#53--onglets-jumeaux-tabulaires-thème-clair)
+  - [5.4 — Sémantique de l'interrupteur « exclure les valeurs imputées »](#54--sémantique-de-linterrupteur--exclure-les-valeurs-imputées-)
+  - [5.5 — Constantes de seuil fixées dans le code](#55--constantes-de-seuil-fixées-dans-le-code)
+- [Étape 6 — Déploiement](#étape-6--déploiement)
+  - [6.1 — Hébergement : Streamlit Community Cloud](#61--hébergement--streamlit-community-cloud)
+  - [6.2 — `.streamlit/config.toml` : thème clair épinglé](#62--streamlitconfigtoml--thème-clair-épinglé)
+  - [6.3 — Version de Python et dépendances épinglées](#63--version-de-python-et-dépendances-épinglées)
+  - [6.4 — Gestion des secrets : aucun secret](#64--gestion-des-secrets--aucun-secret)
+  - [6.5 — Contenu versionné : données incluses, brief exclu](#65--contenu-versionné--données-incluses-brief-exclu)
+
+---
+
 ## Étape 1 — Analyse exploratoire (EDA)
 
 ### 1.1 — Produire le notebook via un script générateur (`_build_01_eda.py`)
@@ -1040,7 +1085,7 @@ explicitement l'effet de l'imputation, pas comme mode d'analyse recommandé.
 
 | Constante | Valeur | Justification |
 |---|---|---|
-| Cible sodium (ligne de référence VIZ 3) | 2300 mg/j | repère OMS population générale ; une ligne unique lisible plutôt qu'une cible différente par pathologie |
+| Repère sodium (ligne de référence VIZ 3) | 2300 mg/j | repère OMS population générale ; une ligne unique lisible plutôt qu'une cible différente par pathologie |
 | Référence protéique (VIZ 3, VIZ 5, drapeau) | 0,8 g/kg/j | apport de référence adulte OMS/EFSA |
 | Effectif de groupe « faible » | 30 | en deçà, un box plot ou une proportion par groupe est signalé comme à lire avec prudence |
 | Sélection filtrée « réduite » | 50 | en deçà, avertissement global sur la lecture des distributions |
@@ -1049,6 +1094,17 @@ explicitement l'effet de l'imputation, pas comme mode d'analyse recommandé.
 Enfouir ces seuils comme nombres nus dans le code des vues. Regroupés en constantes
 nommées en tête de fichier, ils sont révisables sans relire toute la logique, et le
 `DECISIONS.md` peut les justifier un par un.
+
+**Ajustement post-review (2026-09-08)** — la revue du dashboard en production a
+montré que la nuance « repère de population générale, pas une cible individuelle par
+pathologie » ne vivait que dans le README et ce fichier, alors que l'annotation de la
+ligne de référence VIZ 3 affichait « cible ≈ 2300 mg » — le mot « cible » invitant à
+une lecture clinique au niveau du patient. Annotations corrigées dans `app.py` en
+« repère pop. générale ≈ 2300 mg » (sodium) et « repère pop. générale 0,8 g/kg »
+(protéines), pour que la mise en garde soit portée par le graphique lui-même. Les
+libellés `SODIUM_TARGET_MG` / `PROTEIN_TARGET_G_PER_KG` et le sous-titre « vs cible
+thérapeutique » de la vue sont laissés tels quels (portée interne au code, pas
+affichés comme un objectif patient).
 
 ---
 
