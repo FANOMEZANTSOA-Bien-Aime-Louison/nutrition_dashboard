@@ -1,0 +1,9 @@
+# Thème clair forcé pour toute l'application.
+#
+# Les graphiques Plotly sont dessinés en thème clair (surface claire, encre sombre)
+# directement dans app.py. Ce réglage aligne le chrome Streamlit (barre latérale,
+# widgets, en-tête) sur ce choix, pour éviter un rendu mixte clair/sombre selon le
+# thème du navigateur du visiteur — en particulier sur Streamlit Community Cloud, où
+# le thème par défaut suit les préférences système de chaque visiteur.
+[theme]
+base = "light"

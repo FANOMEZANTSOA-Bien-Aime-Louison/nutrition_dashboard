@@ -1051,3 +1051,135 @@ nommées en tête de fichier, ils sont révisables sans relire toute la logique,
 `DECISIONS.md` peut les justifier un par un.
 
 ---
+
+## Étape 6 — Déploiement
+
+### 6.1 — Hébergement : Streamlit Community Cloud
+
+**Décision prise**
+Publier le dashboard sur Streamlit Community Cloud (SCC), directement depuis un dépôt
+GitHub public, avec `app.py` comme point d'entrée et `requirements.txt` comme unique
+manifeste de dépendances. Pas de conteneur, pas de plateforme applicative généraliste.
+
+**Pourquoi**
+L'application est une seule page Streamlit qui lit un CSV statique versionné : aucun
+backend, aucune base, aucun état serveur, aucune tâche planifiée. SCC couvre
+exactement ce cas, se redéploie à chaque `git push`, et ne demande aucune
+configuration d'infrastructure. Un hébergeur généraliste (Fly, Render, un VPS)
+ajouterait un `Dockerfile`, un port à exposer et une supervision à maintenir sans
+rien apporter ici.
+
+**Alternatives envisagées**
+- *Hugging Face Spaces (SDK Streamlit)* — équivalent fonctionnel ; SCC retenu pour
+  rester dans l'écosystème Streamlit (versions et thème gérés de façon identique au
+  local).
+- *`Dockerfile` + hébergeur généraliste* — écartée : surface de maintenance sans
+  bénéfice pour une page sans état.
+- *Export statique (HTML seul)* — impossible : les filtres et le cache
+  `st.cache_data` exigent un serveur Python vivant.
+
+**Piège à éviter**
+Committer un `Dockerfile` ou un `Procfile` « au cas où » : SCC les ignore, et leur
+présence laisse croire à un autre mode de déploiement que celui réellement utilisé.
+
+### 6.2 — `.streamlit/config.toml` : thème clair épinglé
+
+**Décision prise**
+Ajouter `.streamlit/config.toml` avec `[theme] base = "light"`, versionné dans le
+dépôt.
+
+**Pourquoi**
+Les graphiques Plotly sont dessinés en thème clair en dur dans `app.py` (décision
+5.3). Sans ce fichier, le chrome Streamlit (barre latérale, widgets, en-tête) suit
+les préférences système de chaque visiteur : sur SCC, un visiteur en mode sombre
+obtenait une interface sombre encadrant des graphiques clairs. Le fichier de config
+aligne toute l'application sur le choix déjà fait pour les graphiques et **lève** la
+limite qui était jusqu'ici seulement consignée dans le README.
+
+**Alternatives envisagées**
+- *Documenter la limite sans la corriger* — position de l'étape 5 ; abandonnée
+  maintenant qu'un déploiement public rend le rendu mixte visible par n'importe qui.
+- *Rendre les graphiques theme-aware (clair/sombre)* — écartée : la palette et les
+  couleurs de surface ont été validées une seule fois pour le fond clair (décision
+  5.2) ; maintenir deux jeux de couleurs pour un dashboard interne n'est pas justifié.
+- *Régler le thème par `st.set_page_config`* — impossible, ce paramètre n'expose pas
+  le thème ; `config.toml` est le seul point de contrôle.
+
+**Piège à éviter**
+Mettre autre chose que le thème dans ce fichier (options `server`, `browser`) : SCC
+gère lui-même le serveur et surchargerait ces clés, ce qui donne un fichier
+trompeur. Le garder réduit au strict `[theme]`.
+
+### 6.3 — Version de Python et dépendances épinglées
+
+**Décision prise**
+`requirements.txt` épingle les trois dépendances directes à une version exacte
+(`streamlit==1.63.0`, `plotly==7.0.0`, `pandas==3.0.5`) — les mêmes versions que
+l'environnement local validé. Choisir explicitement la version de Python dans les
+« Advanced settings » de SCC au moment du déploiement (Python 3.13), sans fichier de
+version dans le dépôt.
+
+**Pourquoi**
+L'épinglage exact garantit que l'environnement SCC reconstruit à l'identique celui
+où l'application a été testée (`streamlit run app.py` sans erreur, `AppTest` sans
+exception sur les six onglets). SCC ne lit ni `runtime.txt` ni `.python-version` : la
+version de Python se règle uniquement dans le formulaire de déploiement, il est donc
+inutile — et trompeur — d'ajouter un tel fichier. L'environnement local tourne sous
+Python 3.14 ; 3.13 est la version stable la plus haute proposée par SCC et suffit
+(aucune dépendance n'exige 3.14).
+
+**Alternatives envisagées**
+- *Plages de versions (`streamlit>=1.63`)* — écartée : un redéploiement des mois plus
+  tard récupérerait des versions non testées et pourrait casser le rendu sans
+  changement de code.
+- *`runtime.txt` / `.python-version`* — sans effet sur SCC ; écartés pour ne pas
+  suggérer un mécanisme qui n'opère pas.
+
+**Piège à éviter**
+Supposer que le dépôt à lui seul fixe la version de Python. Si l'étape « Advanced
+settings » est sautée, SCC prend sa version par défaut, qui peut évoluer entre deux
+déploiements.
+
+### 6.4 — Gestion des secrets : aucun secret
+
+**Décision prise**
+Aucun secret, aucune variable d'environnement, aucun fichier
+`.streamlit/secrets.toml`. Une ligne `.streamlit/secrets.toml` est tout de même
+ajoutée à `.gitignore` comme garde-fou.
+
+**Pourquoi**
+La seule source de données est `data/patients_nutrition_features.csv`, synthétique,
+publique et versionnée dans le dépôt. Il n'y a ni API tierce, ni base, ni
+authentification. Le panneau « Secrets » de SCC reste donc vide. Le garde-fou dans
+`.gitignore` évite qu'un secret introduit plus tard (clé d'API, chaîne de connexion)
+soit committé par inadvertance.
+
+**Alternatives envisagées**
+- *Charger le CSV depuis une URL externe (stockage objet)* — écartée : introduirait
+  une dépendance réseau et potentiellement un secret, pour un fichier de 460 Ko qui
+  vit très bien dans Git.
+
+**Piège à éviter**
+Créer un `secrets.toml` vide « pour la forme » : fichier inutile, et s'il est
+committé il apprend à l'équipe une mauvaise habitude.
+
+### 6.5 — Contenu versionné : données incluses, brief exclu
+
+**Décision prise**
+Committer les trois CSV du dossier `data/` (source, nettoyé, enrichi) et les trois
+notebooks exécutés. Maintenir `PROJECT_BRIEF.md` dans `.gitignore` (fichier
+d'apprentissage privé, décision 1.6).
+
+**Pourquoi**
+L'application a besoin de `data/patients_nutrition_features.csv` à l'exécution : sur
+SCC, seul le contenu du dépôt est disponible, donc le CSV doit y être. Les données
+étant synthétiques et sans caractère personnel, rien ne s'oppose à leur publication.
+Les CSV intermédiaires et les notebooks documentent la chaîne de traitement et
+restent utiles au lecteur du portfolio. `PROJECT_BRIEF.md` relève de la consigne
+pédagogique et n'a pas à être rendu public.
+
+**Piège à éviter**
+Ajouter `*.csv` à `.gitignore` par réflexe « données = à ignorer » : ici le CSV
+enrichi est une dépendance de run, l'exclure casse le déploiement.
+
+---

@@ -8,6 +8,9 @@ venv/
 # Jupyter
 .ipynb_checkpoints/
 
+# Streamlit — aucun secret dans ce projet, garde-fou si l'on en ajoutait un jour
+.streamlit/secrets.toml
+
 # OS / éditeurs
 .DS_Store
 *.swp

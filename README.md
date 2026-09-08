@@ -32,8 +32,34 @@ streamlit run app.py
 
 Lit `data/patients_nutrition_features.csv`. Filtres (barre latérale) : régime,
 pathologie, catégorie d'IMC, tranche d'âge, et un interrupteur « exclure les valeurs
-imputées / scores incomplets » (activé par défaut). Les graphiques sont rendus en
-thème clair et ne suivent pas le mode sombre de Streamlit.
+imputées / scores incomplets » (activé par défaut). L'ensemble de l'application est
+épinglé en thème clair (`.streamlit/config.toml`) : les graphiques sont dessinés en
+clair et le reste de l'interface s'aligne dessus.
+
+## Repères de lecture — à ne pas interpréter cliniquement
+
+Le dashboard est un outil de **visualisation de patientèle**. Il ne calcule aucune
+cible individuelle et n'émet aucune recommandation.
+
+- **Seuil sodium ≈ 2300 mg/j** (ligne de référence de l'onglet « Apports vs cible ») :
+  c'est un **repère de population générale** (OMS), affiché comme simple point de
+  comparaison lisible sur un graphique agrégé. Ce **n'est pas** une cible personnalisée
+  par pathologie : les recommandations réelles sont plus basses et variables selon le
+  contexte (souvent < 2000 mg/j en cas d'hypertension ou d'insuffisance rénale), et
+  dépendent du traitement et du suivi médical. Un lecteur non averti ne doit pas lire
+  « au-dessus de 2300 = anormal » au niveau d'un patient.
+- **Référence protéique 0,8 g/kg/j** : apport de référence adulte (OMS/EFSA), même
+  statut — repère populationnel, pas une prescription (les besoins montent notamment
+  chez le sujet âgé ou dénutri).
+- **Drapeau « Sodium élevé (cardio-rénal) »** : il se déclenche au-delà de 3500 mg/j
+  pour les patients hypertendus ou insuffisants rénaux. C'est un **signal de tri
+  interne** pour prioriser la revue de dossiers, pas un seuil de décision clinique.
+
+## Déploiement
+
+Application publiée sur **Streamlit Community Cloud** (`app.py` comme point d'entrée).
+Aucun secret n'est requis : les données sont synthétiques, statiques et versionnées
+dans le dépôt. Voir `DECISIONS.md` § Étape 6 pour les choix de configuration.
 
 ## Scripts générateurs de notebooks
 
